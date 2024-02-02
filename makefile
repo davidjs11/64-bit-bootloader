@@ -13,7 +13,7 @@ all: main.bin
 
 main.bin: $(ASM_FILES)
 	@echo "compiling $@..."
-	@nasm -f bin $< -o $@
+	@nasm -f bin main.asm -o $@
 
 run: main.bin
 	@qemu-system-x86_64 main.bin

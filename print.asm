@@ -7,14 +7,14 @@
 ; di - char buffer
 print:
     pusha           ; save registers
-    mov ah, 0x0E    ; TTY output function
+    mov ah, 0x0E    ; TTY output function (BIOS)
 
 print_loop:
     mov al, [di]    ; get byte to print (ascii)
     test al, al     ; if character is null -> finish
     jz print_end
 
-    int 0x10        ; call interrupt
+    int 0x10        ; print character (BIOS)
     inc di          ; increment pointer
     jmp print_loop  ; loop again
 
