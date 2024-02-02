@@ -1,13 +1,21 @@
-TARGET	= -target x86_64-pc-none-elf
+HOME		= .
+SRC 	    = $(HOME)/.
+OBJ			= $(HOME)/.
+ASM_FILES   = $(wildcard $(SRC)/*.asm)
+OBJ_FILES   = $(patsubst $(SRC)/%.asm, $(OBJ)/%.o, $(ASM_FILES))
 
-all: mbr
+all: main.bin
 	@echo "[+] done!"
 
-mbr:
-	@echo "compiling MBR..."
-	@nasm -f bin main.asm -o main.bin
+# %.o: %.asm
+# 	@echo "compiling $<..."
+# 	@nasm -f bin $< -o $@
 
-run:
+main.bin: $(ASM_FILES)
+	@echo "compiling $@..."
+	@nasm -f bin $< -o $@
+
+run: main.bin
 	@qemu-system-x86_64 main.bin
 
 clean:
