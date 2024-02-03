@@ -1,19 +1,15 @@
-HOME		= .
-SRC 	    = $(HOME)/.
-OBJ			= $(HOME)/.
-ASM_FILES   = $(wildcard $(SRC)/*.asm)
-OBJ_FILES   = $(patsubst $(SRC)/%.asm, $(OBJ)/%.o, $(ASM_FILES))
+BIN_FILES	= stage0.bin boot.bin
 
 all: main.bin
 	@echo "[+] done!"
 
-# %.o: %.asm
-# 	@echo "compiling $<..."
-# 	@nasm -f bin $< -o $@
-
-main.bin: $(ASM_FILES)
+%.bin: %.asm
 	@echo "compiling $@..."
-	@nasm -f bin main.asm -o $@
+	@nasm -f bin $< -o $@
+
+main.bin: $(BIN_FILES)
+	@echo "creating boot.bin..."
+	@cat $^ > $@
 
 run: main.bin
 	@qemu-system-x86_64 main.bin
