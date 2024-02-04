@@ -1,4 +1,4 @@
-BIN_FILES	= stage0.bin boot.bin
+BIN_FILES	= boot_sector.bin
 
 all: main.bin
 	@echo "[+] done!"
