@@ -1,55 +1,22 @@
 ; --- boot_sector.asm -----------------------------------------------
-
 [org 0x7C00]                ; set 0x7C0 segment
-[bits 16]                   ; 16-bit real mode
-
-; init the stack
-mov bp, 0x8000
-mov sp, bp
 
 ; main function
+[bits 16]
 _start:
-    mov si, str_booting
-    call print
-    call newline
-    jmp $
-    
+    ; init the stack
+    mov bp, 0x9000
+    mov sp, bp
 
-; --- printing routines ---------------------------------------------
-; print a string until null character
-; ds:si - buffer address
-print:
-    pusha           ; save registers
-    mov ah, 0x0E    ; TTY output function (BIOS)
-    xor bx, bx      ; set page 0
-
-print_loop:
-    lodsb           ; load byte from 'ds:si' and increment 'si'
-    test al, al     ; if character is null:
-    jz print_end    ;   finish
-
-    int 0x10        ; print character (BIOS)
-    jmp print_loop  ; loop again
-
-print_end:
-    popa            ; restore registers
-    ret             ; return from call
-
-; jump to a new line
-newline:
-    pusha           ; save registers
-    mov ax, 0x0E0A  ; new line character
-    int 0x10        ; print (BIOS)
-    mov ax, 0x0E0D  ; carriage return
-    int 0x10        ; print (BIOS)
-    popa            ; restore registers
-    ret             ; return from call
+    ; switch to 32-bit protected mode
+    call switch_protected_mode
 
 
 ; --- disk reading routines -----------------------------------------
 ; read from disk
 ; al - number of sectors to read
 ; es:bx - destiny buffer
+[bits 16]
 disk_read:
     pusha           ; save registers
 
@@ -66,10 +33,77 @@ disk_read:
     ret             ; return from call
 
 
-; --- string definition ---------------------------------------------
-str_reading:    db "reading disk... ", 0x00
-str_booting:    db "booting up... ", 0x00
-str_done:       db "done!", 0x00
+; --- mode switching routines ---------------------------------------
+[bits 16]
+switch_protected_mode:
+    cli                     ; disable interrupts
+    lgdt [GDT_32.pointer]   ; load the GDT pointer
+    mov eax, cr0            ; set 32-bit flag on control register
+    or  eax, 0x1
+    mov cr0, eax
+
+    jmp GDT_32.code:PM_Code
+
+
+; --- 32-bit program ------------------------------------------------
+[bits 32]
+PM_Code:
+    ; set segment registers
+    mov ax, GDT_32.data
+    mov ds, ax
+    mov fs, ax
+    mov gs, ax
+    mov ss, ax
+
+    jmp $
+
+
+; --- 32-bit GDT ----------------------------------------------------
+GDT_32:
+    ; null segment -> all zero
+    .null: equ $ - GDT_32
+        dd 0x00000000
+        dd 0x00000000
+    
+    ; base: 0x0  -  limit: 0xFFFF
+    .code: equ $ - GDT_32
+        dw 0xFFFF, 0x0000
+        db 0x00, 0x9A, 0xCF, 0x00
+
+    ; base: 0x0  -  limit: 0xFFFF
+    .data: equ $ - GDT_32
+        dw 0xFFFF, 0x0000
+        db 0x00, 0x92, 0xCF, 0x00
+    
+    .pointer:
+        dw $ - GDT_32 - 1   ; limit
+        dd GDT_32           ; base
+
+
+; --- 64-bit GDT ----------------------------------------------------
+GDT_64:
+    ; null segment -> all zero
+    .null: equ $ - GDT_64
+        dd 0x00000000
+        dd 0x00000000
+
+    ; bit 41: readable
+    ; bit 43: executable
+    ; bit 44: descriptor type (1 for code/data)
+    ; bit 47: present
+    ; bit 53: '64-bit'
+    .code: equ $ - GDT_64
+        dq (1<<41) | (1<<43) | (1<<44) | (1<<47) | (1<<53)
+
+    ; bit 41: writable
+    ; bit 44: descriptor type (1 for code/data)
+    ; bit 47: present
+    .data: equ $ - GDT_64
+        dq (1<<41) | (1<<44) | (1<<47)
+
+    .pointer:
+        dw $ - GDT_64 - 1   ; limit
+        dd GDT_64           ; base
 
 
 ; --- mbr signature -------------------------------------------------
