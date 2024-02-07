@@ -12,7 +12,7 @@ main.bin: $(BIN_FILES)
 	@cat $^ > $@
 
 run: main.bin
-	@qemu-system-x86_64 main.bin
+	@qemu-system-x86_64 -s -fda main.bin
 
 clean:
 	@echo "[-] cleaning..."

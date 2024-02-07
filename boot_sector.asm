@@ -105,11 +105,11 @@ switch_protected_mode:
 
 [bits 32]
 switch_long_mode:
-    ; page tables:
-    ; PML4T:  0x1000  - 0x2003
-    ; PDPT :  0x2000  - 0x3003
-    ; PDT  :  0x3000  - 0x4003
-    ; PT   :  0x4000  - 
+    ; page tables
+    ; PML4T:  0x1000 - 0x1FFF
+    ; PDPT :  0x2000 - 0x2FFF
+    ; PDT  :  0x3000 - 0x3FFF
+    ; PT   :  0x4000 - 0x4FFF
 
     ; clear the tables
     mov edi, 0x1000     ; set destination index to 0x1000
